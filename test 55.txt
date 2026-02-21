@@ -1,0 +1,171 @@
+-- [[ CHII HAUU HUB - FINAL VERSION 2026 ]] --
+local player = game.Players.LocalPlayer
+local runService = game:GetService("RunService")
+
+-- ID HÌNH ẢNH (Thay bằng ID của bạn nếu muốn)
+local MY_IMAGE_ID = "rbxassetid://90043470867537" 
+
+-- 1. Khởi tạo UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ChiiHauu_Ultimate_V4"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 820, 0, 100) 
+mainFrame.Position = UDim2.new(0.5, -410, 0.5, -50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(0, 200, 255)
+
+-- Nút Logo Draggable (Mở/Tắt Menu)
+local imageBtn = Instance.new("ImageButton")
+imageBtn.Parent = screenGui
+imageBtn.Size = UDim2.new(0, 60, 0, 60)
+imageBtn.Position = UDim2.new(0, 50, 0.5, -30)
+imageBtn.Image = MY_IMAGE_ID
+imageBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Instance.new("UICorner", imageBtn).CornerRadius = UDim.new(1, 0)
+Instance.new("UIStroke", imageBtn).Color = Color3.fromRGB(0, 200, 255)
+imageBtn.Active = true
+imageBtn.Draggable = true
+imageBtn.MouseButton1Click:Connect(function() mainFrame.Visible = not mainFrame.Visible end)
+
+-- Layout & Buttons
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1, -20, 0, 50)
+container.Position = UDim2.new(0, 10, 0, 40)
+container.BackgroundTransparency = 1
+container.Parent = mainFrame
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.Padding = UDim.new(0, 5)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.Parent = container
+
+local function AddButton(text)
+    local btn = Instance.new("TextButton")
+    btn.Text = text
+    btn.Size = UDim2.new(0, 95, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 9
+    btn.Parent = container
+    Instance.new("UICorner", btn)
+    return btn
+end
+
+local farmBtn = AddButton("Auto Farm")
+local fastBtn = AddButton("Fast Attack")
+local bringBtn = AddButton("Gom Quái")
+local questBtn = AddButton("Auto Quest")
+local chestBtn = AddButton("Auto Chest")
+local espBtn = AddButton("Fruit ESP")
+local autoFruitBtn = AddButton("Auto Fruit")
+local statsBtn = AddButton("Auto Stats")
+
+local _G = { Farm = false, Fast = false, Bring = false, Quest = false, Chest = false, ESP = false, AutoFruit = false, Stats = false }
+
+-- 2. HÀM LẤY QUEST (ĐÃ CẬP NHẬT)
+function GetQuest()
+    local lv = player.Data.Level.Value
+    if lv < 15 then return "BanditQuest1", 1
+    elseif lv < 30 then return "MonkeyQuest1", 1
+    elseif lv < 40 then return "MonkeyQuest1", 2
+    elseif lv < 60 then return "PirateIslandQuest1", 1
+    elseif lv < 75 then return "PirateIslandQuest1", 2
+    elseif lv < 90 then return "DesertQuest", 1
+    else return "DesertQuest", 2 end
+end
+
+-- 3. LOGIC FARM TỔNG HỢP (FIX REACH, FAST, HAKI, BRING)
+task.spawn(function()
+    while task.wait() do
+        if _G.Farm then
+            pcall(function()
+                -- Auto Buso
+                if not player.Character:FindFirstChild("HasBuso") then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso")
+                end
+                -- Auto Quest
+                if _G.Quest and not player.PlayerGui.Main.Quest.Visible then
+                    local q, n = GetQuest()
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", q, n)
+                end
+                -- Farm Loop
+                for _, Monster in pairs(workspace.Enemies:GetChildren()) do
+                    if Monster:FindFirstChild("HumanoidRootPart") and Monster.Humanoid.Health > 0 then
+                        if _G.Bring then 
+                            Monster.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -6)
+                            Monster.HumanoidRootPart.CanCollide = false
+                        end
+                        -- Reach 6.5 unit (Khoảng cách đánh xa an toàn)
+                        player.Character.HumanoidRootPart.CFrame = Monster.HumanoidRootPart.CFrame * CFrame.new(0, 6.5, 0)
+                        if _G.Fast then
+                            player.Character:FindFirstChildOfClass("Tool"):Activate()
+                            game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.huge)
+                        end
+                        break 
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 4. LOGIC AUTO CHEST
+task.spawn(function()
+    while task.wait(0.1) do
+        if _G.Chest then
+            for _, v in pairs(workspace:GetChildren()) do
+                if v.Name:find("Chest") and v:IsA("Part") then
+                    player.Character.HumanoidRootPart.CFrame = v.CFrame
+                end
+            end
+        end
+    end
+end)
+
+-- 5. PHỤ TRỢ (STATS, ESP, FRUIT)
+task.spawn(function()
+    while task.wait(1) do
+        if _G.Stats then game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AddPoint", "Melee", 3) end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.ESP or _G.AutoFruit then
+            for _, v in pairs(game.CoreGui:GetChildren()) do if v.Name == "FruitTrack" then v:Destroy() end end
+            for _, v in pairs(workspace:GetChildren()) do
+                if v.Name:find("Fruit") or (v:IsA("Tool") and v:FindFirstChild("Handle")) then
+                    local target = v:IsA("Tool") and v.Handle or v
+                    if _G.ESP then
+                        local bill = Instance.new("BillboardGui", game.CoreGui)
+                        bill.Name = "FruitTrack"; bill.AlwaysOnTop = true; bill.Size = UDim2.new(0, 100, 0, 50); bill.Adornee = target
+                        local txt = Instance.new("TextLabel", bill)
+                        txt.Size = UDim2.new(1, 0, 1, 0); txt.Text = "🍎 " .. v.Name; txt.TextColor3 = Color3.fromRGB(255, 0, 0); txt.BackgroundTransparency = 1; txt.Parent = bill
+                    end
+                    if _G.AutoFruit then player.Character.HumanoidRootPart.CFrame = target.CFrame end
+                end
+            end
+        end
+    end
+end)
+
+-- 6. GÁN SỰ KIỆN NÚT BẤM (ĐÃ FIX ĐẦY ĐỦ)
+local function SetToggle(btn, var, col)
+    _G[var] = not _G[var]
+    btn.BackgroundColor3 = _G[var] and col or Color3.fromRGB(30, 30, 30)
+end
+
+farmBtn.MouseButton1Click:Connect(function() SetToggle(farmBtn, "Farm", Color3.fromRGB(0, 170, 0)) end)
+fastBtn.MouseButton1Click:Connect(function() SetToggle(fastBtn, "Fast", Color3.fromRGB(255, 0, 0)) end)
+bringBtn.MouseButton1Click:Connect(function() SetToggle(bringBtn, "Bring", Color3.fromRGB(170, 0, 255)) end)
+questBtn.MouseButton1Click:Connect(function() SetToggle(questBtn, "Quest", Color3.fromRGB(0, 100, 200)) end)
+chestBtn.MouseButton1Click:Connect(function() SetToggle(chestBtn, "Chest", Color3.fromRGB(255, 200, 0)) end)
+espBtn.MouseButton1Click:Connect(function() SetToggle(espBtn, "ESP", Color3.fromRGB(255, 255, 0)) end)
+autoFruitBtn.MouseButton1Click:Connect(function() SetToggle(autoFruitBtn, "AutoFruit", Color3.fromRGB(255, 85, 0)) end)
+statsBtn.MouseButton1Click:Connect(function() SetToggle(statsBtn, "Stats", Color3.fromRGB(0, 255, 255)) end)
